@@ -1,3 +1,4 @@
+.gitignore
 pydic
 pyicu
 __pycache__

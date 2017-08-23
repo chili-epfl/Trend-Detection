@@ -73,7 +73,6 @@ from pattern3.fr import parse as frparse
 from pattern3.nl import parse as nlparse
 from pattern3.de import parse as deparse
 from pattern3.it import parse as itparse
-from pattern3.es import parse as esparse
 from pydic import PyDic
 from pymystem3 import Mystem
 
@@ -113,7 +112,6 @@ def lemmatise(word, language):
             'dutch': nlparse(word, lemmata=True).split('/')[-1],
             'german': deparse(word, lemmata=True).split('/')[-1],
             'italian': itparse(word, lemmata=True).split('/')[-1],
-            'spanish': esparse(word, lemmata=True).split('/')[-1],
             'polish': pl_lemmatise(word),
             'russian': ru_lemmatise(word)
         }[language]
