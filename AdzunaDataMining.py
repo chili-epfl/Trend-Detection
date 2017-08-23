@@ -7,6 +7,7 @@ categories = "scientific-qa-jobs consultancy-jobs pr-advertising-marketing-jobs 
 no_results = "\"results\":[]"
 
 def request_page(country, category, page):
+    # Credentials no longer valid
     r = urllib.request.urlopen("http://api.adzuna.com:80/v1/api/jobs/{}/search/{}?app_id=92cd0f19&app_key=8a9c57473fdeded0f90386b69569e1ba&results_per_page=50&max_days_old=20000&category={}&sort_direction=up&sort_by=date".format(country, page, category)).read().decode('utf-8')
     if (no_results in r):
         return 0
