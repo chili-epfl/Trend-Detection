@@ -1,4 +1,3 @@
-.gitignore
 pydic
 pyicu
 __pycache__
@@ -9,3 +8,4 @@ Trend Positions
 TF IDF Delta
 TreeTagger
 TreeTaggerParameters
+Lemmatised Text/br_accounting-finance-jobs.txt
