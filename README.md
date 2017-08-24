@@ -1,2 +1,2 @@
 # Trend-Detection
-Detecting and Predicting Trends in Job Advertisements
+Detecting Trends in Job Advertisements
