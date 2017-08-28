@@ -35,9 +35,9 @@ for category in map:
     sorted(map[category])
     for year in map[category]:
         print("201{}\t{}".format(year, map[category][year][0]), file=file)
-        for month in range(1,12):
+        for month in range(1,13):
             if month in map[category][year]:
-                for day in range(0,31):
+                for day in range(0,32):
                     if day in map[category][year][month]:
                         print("201{}-{}-{}\t{}".format(year, month, day, map[category][year][month][day]), file=file)
     file.close()

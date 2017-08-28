@@ -39,8 +39,9 @@ def get_energy_json(df):
 ### HTML ###
 
 def get_interest_over_time(pytrend, country, keyword, recursion):
+    # timeframe="2016-01-01 2017-06-30"
     try:
-        pytrend.build_payload([keyword], timeframe="2016-01-01 2017-06-30", geo=country.upper())
+        pytrend.build_payload([keyword], timeframe="all", geo=country.upper())
         try:
             return pytrend.interest_over_time()
         except:
@@ -56,7 +57,7 @@ def get_energy(df):
     if df.empty:
         return "NaN"
     energy = 0
-    rows = list(df.iterrows())
+    rows = list(df.iterrows())[-20:-2]
     last_element = rows[-1][1][0]
     interval_count = len(rows) - 1
     for index in range(interval_count):
