@@ -1,3 +1,10 @@
+"""
+Outputs Google Trends data in the following format:
+- 1st column: word
+- 2nd column: TF-IDF delta
+- 3rd column: Google Trends energy
+"""
+
 from pytrends.request import TrendReq
 import math
 import os

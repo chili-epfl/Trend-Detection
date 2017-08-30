@@ -1,3 +1,8 @@
+"""
+Trend Detection pipeline
+- Outputs in Lemmatised Text, TF IDF Delta folders
+"""
+
 import csv
 import sys
 from nltk.tokenize import RegexpTokenizer
@@ -189,7 +194,14 @@ def pre_process(tokens, lang):
 
 from TreeTagger import TreeTagger
 
-def get_pre_processed_entries(filename, to_delete, max_month, year):
+def get_pre_processed_entries(filename, to_delete, min_month, max_month, year):
+    """
+    Arguments:
+        filename: path to the file to be read
+        to_delete: map of the words that should be cross-domain-filtered
+        min_month and max_month: we want job ads that were published from month with number min_month to month with number max_month
+        year: we want job ads in this year
+    """
     with open(filename, 'r') as csvfile:
         # Reading file, deleting header, getting descriptions
         reader = list(csv.reader(csvfile))
@@ -202,13 +214,13 @@ def get_pre_processed_entries(filename, to_delete, max_month, year):
             print("THE REJECTED LANGUAGE", lang)
             tt = TreeTagger(language='english')
         # Descriptions
-        descriptions = [tokenize(x[4]) for x in reader if check_time(x[2], max_month, year)]
+        descriptions = [tokenize(x[4]) for x in reader if check_time(x[2], min_month, max_month, year)]
         descriptions = gsp_search(descriptions, 0.2)
         descriptions = [remove_words(prune_ner_tags(description), to_delete, tt) for description in descriptions]
         return descriptions
 
-def check_time(string, max_month, year):
-    return int(string[:4]) == year and int(string[5:7]) <= max_month
+def check_time(string, min_month, max_month, year):
+    return int(string[:4]) == year and int(string[5:7]) <= max_month and int(string[5:7]) >= min_month
 
 ### POS TAG AND CROSS DOMAIN FILTERING
 
@@ -333,8 +345,8 @@ def get_tfidf_for_trends(d1, d2):
 
 def extract_text_for_trends(filename, to_delete):
     file_path = os.path.join(desc_dir, filename)
-    descriptions_2016 = get_pre_processed_entries(file_path, to_delete, 6, 2016)
-    descriptions_2017 = get_pre_processed_entries(file_path, to_delete, 6, 2017)
+    descriptions_2016 = get_pre_processed_entries(file_path, to_delete, 1, 6, 2016)
+    descriptions_2017 = get_pre_processed_entries(file_path, to_delete, 1, 6, 2017)
     return descriptions_2016, descriptions_2017
 
 def extract_keywords(directory, filename):
@@ -460,11 +472,9 @@ def get_keywords_per_country(directory, dest_dir):
 
 ### MAIN ###
 
-desc_dir = "Lemmatised Text"
-
 if __name__ == '__main__':
+    desc_dir = "Lemmatised Text"
     directory = "Raw Text"
     dest_dir = "TF IDF Delta"
-
     csv.field_size_limit(sys.maxsize)
     get_keywords_per_country(directory, dest_dir)

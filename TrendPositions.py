@@ -1,8 +1,10 @@
+"""Outputs the distribution of positions of trending words within their job ad description"""
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import csv, sys, os
-from KeywordPipeline import get_countries, cross_domain_filtering, get_pre_processed_entries
+from TrendDetectionPipeline import get_countries, cross_domain_filtering, get_pre_processed_entries
 import numpy as np
 
 def get_trending_words(filename):
@@ -54,10 +56,11 @@ def get_trend_position_graphs():
                 print(filename)
                 file_path = os.path.join(desc_dir, filename)
                 try:
-                    desc_2017 = np.load("Trend Prediction/descriptions_2017_{}.npy".format(filename[:-4])).item()
+                    desc_2017 = np.load("Trend Positions/descriptions_2017_{}.npy".format(filename[:-4])).item()
                 except:
-                    desc_2017 = get_pre_processed_entries(file_path, to_delete, 6, 2017)
-                    np.save("Trend Prediction/descriptions_2017_{}.npy".format(filename[:-4]), desc_2017)
+                    # Change date to new time period
+                    desc_2017 = get_pre_processed_entries(file_path, to_delete, 1, 6, 2017)
+                    np.save("Trend Positions/descriptions_2017_{}.npy".format(filename[:-4]), desc_2017)
                 positions_count = get_trend_positions(desc_2017, trending_NLP)
                 plt.title(filename)
                 plt.figure(figsize=(100, 40))
