@@ -56,21 +56,25 @@ if __name__ == "__main__":
                         redirect_url = BeautifulSoup(url.urlopen(data[key]['redirect_url']).read())
                         if len(redirect_url('a')) == 1:
                             job_url = str(redirect_url('a')[0]).split("href=\"")[1].split("\">")[0]
-                            try:
-                                soup = BeautifulSoup(url.urlopen(job_url).read())
-                                [s.extract() for s in soup('script')]
-                                [s.extract() for s in soup('a')]
-                                text = soup.get_text()
-                                if description[:10] in text:
-                                    description = text[text.index(description[:10]):]
-                                    desc_from_url = 1
-                                    print("Description from URL")
-                                else:
-                                    desc_from_url = 0
-                                    print("Redirect Target URL doesn't have Description")
-                            except:
-                                print("Could not get Redirect Target URL")
-                                continue
+                            soup = BeautifulSoup(url.urlopen(job_url).read())
+                            print("This is a redirect URL")
+                        else:
+                            soup = redirect_url
+                            print("The Job Ad Description will be retrieved from Adzuna")
+                        try:
+                            [s.extract() for s in soup('script')]
+                            [s.extract() for s in soup('a')]
+                            text = soup.get_text()
+                            if description[:10] in text:
+                                description = text[text.index(description[:10]):]
+                                desc_from_url = 1
+                                print("Description from URL")
+                            else:
+                                desc_from_url = 0
+                                print("Redirect Target URL doesn't have Description")
+                        except:
+                            print("Could not get Redirect Target URL")
+                            continue
                     except:
                         print("Could not get Redirect Source URL")
                         continue
@@ -79,3 +83,13 @@ if __name__ == "__main__":
                     map[category].append(job)
                 continue
 
+    try:
+        print("Printing the CSV file of {}".format(old_category))
+        with open('Raw Text/{}.csv'.format(old_category), 'w') as csvfile:
+            fieldnames = ['id', 'title', 'created', 'description_from_url', 'description']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            for job in map[category]:
+                writer.writerow(job)
+    except:
+         print("Last category was empty")
