@@ -40,28 +40,39 @@ if __name__ == '__main__':
     print("Loaded stop words.      ")
 
 def test_for_language(descriptions):
+    """
+    Tests which language descriptions are written in.
+    :param descriptions: list of strings
+    :return: string
+    """
     tokens = [item for d in descriptions for item in d]
     lang = which_language(tokens)
     return lang
 
 def score(tokens):
-    """Get text, find most common words and compare with known
-    stopwords. Return dictionary of values"""
+    """
+    Get text, find most common words and compare with known
+    stopwords. Return dictionary of values
+    :param tokens: list of strings, token
+    :return: dict, score per language
+    """
     # Evaluating scores for each language
     scorelist = {}
     for lang in dict_list:
         scorelist[lang] = 0
         for word in tokens:
-            try:
-                x = dict_list[lang][word]
-                scorelist[lang] += 1
-            except:
-                continue
+            if lang in dict_list:
+                if word in dict_list[lang]:
+                    scorelist[lang] += 1
     return scorelist
 
 def which_language(text):
-    """This function just returns the language name, from a given
-    "scorelist" dictionary as defined above."""
+    """
+    This function just returns the language name, from a given
+    "scorelist" dictionary as defined above.
+    :param text: list of strings
+    :return: string
+    """
     scorelist = score(text)
     sorted_scorelist = sorted(scorelist.items(), key=operator.itemgetter(1))
     maximum = sorted_scorelist[-1][1]
@@ -82,6 +93,7 @@ from pydic import PyDic
 from pymystem3 import Mystem
 
 if __name__ == "__main__":
+    # Initialising Lemmatisers with logs
     print("Initialising lemmatiser for Polish...  ",end='\r')
     pl_dict = PyDic('pydic/odm.txt')
     print("Initialising lemmatiser for Russian... ",end='\r')
@@ -91,15 +103,30 @@ if __name__ == "__main__":
     print("Done initialising lemmatisers.         ")
 
 def pl_lemmatise(word):
+    """
+    Lemmatiser for Polish
+    :param word: string
+    :return: string
+    """
     word_forms = pl_dict.word_base(word)
     if word_forms:
         return word_forms[0]
     return word
 
 def ru_lemmatise(word):
+    """
+    Lemmatiser for Russian
+    :param word: string
+    :return: string
+    """
     return ru_lemmatiser.lemmatize(word)[0]
 
 def en_lemmatise(word):
+    """
+    Lemmatiser for English
+    :param word: string
+    :return: string
+    """
     new_word = en_lemmatiser.lemmatize(word, wn.NOUN)
     if new_word == word:
         new_word = en_lemmatiser.lemmatize(word, wn.VERB)
@@ -110,6 +137,12 @@ def en_lemmatise(word):
     return new_word
 
 def lemmatise(word, language):
+    """
+    Redirects to language's lemmatiser.
+    :param word: string
+    :param language: string
+    :return: string
+    """
     try:
         return {
             'english': en_lemmatise(word),
@@ -128,9 +161,15 @@ def lemmatise(word, language):
 # Tokenizing, lemmatising, removing stop words, and patterns of format (hex color, digit-only or digit-started strings)
 
 def get_entries(directory, filename):
-    lemmatised_files = os.listdir(desc_dir)
+    """
+    Gets descriptions from file.
+    :param directory: string
+    :param filename: string
+    :return: list of strings
+    """
+    lemmatised_files = os.listdir(DESC_DIR)
     if filename in lemmatised_files:
-        with open('{}/{}'.format(desc_dir, filename), 'r') as csvfile:
+        with open('{}/{}'.format(DESC_DIR, filename), 'r') as csvfile:
             reader = list(csv.reader(csvfile))
             del reader[0]
             descriptions = [x[4].split(' ') for x in reader]
@@ -139,7 +178,7 @@ def get_entries(directory, filename):
         with open(os.path.join(directory, filename), 'r') as csvfile:
             # Reading file, deleting header, getting descriptions
             reader = list(csv.reader(csvfile))
-            with open('{}/{}'.format(desc_dir, filename), 'w') as new_csvfile:
+            with open('{}/{}'.format(DESC_DIR, filename), 'w') as new_csvfile:
                 header = reader[0]
                 writer = csv.DictWriter(new_csvfile, fieldnames=header)
                 writer.writeheader()
@@ -161,10 +200,21 @@ def get_entries(directory, filename):
                 return new_descriptions
 
 def tokenize(description):
+    """
+    Tokenizer
+    :param description: string
+    :return: list of strings
+    """
     tokenizer = RegexpTokenizer(r'\w+')
     return tokenizer.tokenize(description.lower())
 
 def matches(pattern, string):
+    """
+    Checks if match pattern was found in string
+    :param pattern: Regex
+    :param string: string
+    :return: Boolean
+    """
     re_match = pattern.match(string)
     if bool(re_match):
         re_span = re_match.span()
@@ -172,14 +222,18 @@ def matches(pattern, string):
     return False
 
 def pre_process(tokens, lang):
+    """
+    Pre_processes tokens for given language
+    :param tokens: list of strings
+    :param lang: string
+    :return: list of strings
+    """
     pattern_1 = re.compile(r"\d+([a-z]+)?")
     pattern_2 = re.compile(r"([a-f]|(\d)){6}")
     # Filtering Stop Words and details of words
     new_tokens = []
     for token in tokens:
-        try:
-            x = dict_list[lang][token]
-        except:
+        if lang not in dict_list or token not in dict_list[lang]:
             if not matches(pattern_1, token) and not matches(pattern_2, token) and '_' not in token and len(token) <= 20:
                 new_token = lemmatise(token, lang)
                 new_tokens.append(new_token)
@@ -196,6 +250,7 @@ from TreeTagger import TreeTagger
 
 def get_pre_processed_entries(filename, to_delete, min_month, max_month, year):
     """
+    Pre-processing function
     Arguments:
         filename: path to the file to be read
         to_delete: map of the words that should be cross-domain-filtered
@@ -227,6 +282,11 @@ def check_time(string, min_month, max_month, year):
 from polyglot.detect import Detector
 
 def get_language(reader):
+    """
+    Gets language of descriptions.
+    :param reader: CSV file content
+    :return: string
+    """
     desc = [x[4] for x in reader]
     text = ' '.join(desc)
     try:
@@ -239,11 +299,16 @@ def get_language(reader):
         return test_for_language(desc)
 
 def remove_words(description, to_delete, tt):
+    """
+    Removes words from description
+    :param description: list of strings, tokenized description
+    :param to_delete: list of strings, words to delete
+    :param tt: TreeTagger
+    :return:
+    """
     new_description = []
     for word in description:
-        try:
-            x = to_delete[word]
-        except:
+        if word not in to_delete:
             if tt.is_acceptable_word(word):
                 new_description.append(word)
     return new_description
@@ -253,6 +318,11 @@ def remove_words(description, to_delete, tt):
 from polyglot.text import Text
 
 def prune_ner_tags(tokens):
+    """
+    Removes locations and persons as detected by NER tagger.
+    :param tokens: list of strings
+    :return: pruned list of strings
+    """
     try:
         entities = set([location for entity in Text(' '.join(tokens)).entities for location in list(entity) if entity.tag in ["I-LOC", "I-PER"]])
         new_description = [token for token in tokens if token not in entities]
@@ -263,6 +333,11 @@ def prune_ner_tags(tokens):
 ### SELECTION OF FREQUENT TERMS ###
 
 def tf_idf(corpus):
+    """
+    Computes TF-IDF
+    :param corpus: list of lists of strings
+    :return: dict with TF-IDF score
+    """
     df = {}
     tf = {}
     doc_len = len(corpus)
@@ -292,6 +367,11 @@ def tf_idf(corpus):
     return tfidf
 
 def get_keywords_per_document(tfidf):
+    """
+    Gets highest-scoring words in TF IDF.
+    :param tfidf: dict
+    :return: ranking (dict) and sorted words by score (list)
+    """
     sorted_tfidf = sorted(tfidf.items(), key=operator.itemgetter(1))
     ranking = {}
     word_count = len(sorted_tfidf)
@@ -300,6 +380,11 @@ def get_keywords_per_document(tfidf):
     return ranking, sorted_tfidf
 
 def select_keywords(corpus):
+    """
+    Selects keywords using the above functions.
+    :param corpus: list of lists of strings
+    :return: ranking (dict) and sorted words by score (list)
+    """
     tfidf = tf_idf(corpus)
     keywords, sorted_tfidf = get_keywords_per_document(tfidf)
     return keywords, sorted_tfidf
@@ -307,6 +392,11 @@ def select_keywords(corpus):
 ### CROSS-DOMAIN FILTERING ###
 
 def cross_domain_filtering(keywords_per_country):
+    """
+    Cross-domain Filtering function
+    :param keywords_per_country: dict
+    :return: list of strings
+    """
     keywords = set([keyword for category in keywords_per_country for keyword in category])
     threshold = min(len(keywords)*0.1, 1000)
     to_delete = {}
@@ -324,6 +414,12 @@ def cross_domain_filtering(keywords_per_country):
 ### GSP SEARCH ###
 
 def introduce_n_grams(text, n_grams):
+    """
+    Joins n-grams in text
+    :param text: list of strings
+    :param n_grams: list of strings
+    :return: list of strings
+    """
     new_text = ' '.join(text)
     for n_gram in n_grams:
         if n_gram in new_text:
@@ -331,6 +427,12 @@ def introduce_n_grams(text, n_grams):
     return new_text.split(' ')
 
 def gsp_search(descriptions, threshold):
+    """
+    Performs Generalised Sequential Pattern (GSP) search given threshold on descriptions
+    :param descriptions: list of strings
+    :param threshold: float
+    :return: list of strings
+    """
     gsp = GspSearch(descriptions)
     n_grams = gsp.search(threshold)
     new_descriptions = [introduce_n_grams(description, n_grams) for description in descriptions]
@@ -339,17 +441,35 @@ def gsp_search(descriptions, threshold):
 ### PIPELINE ###
 
 def get_tfidf_for_trends(d1, d2):
+    """
+    Gets keywords using TF-IDF for 2 time periods
+    :param d1: list of list of strings
+    :param d2: list of list of strings
+    :return: tuple of lists of strings
+    """
     keywords_2016, tfidf_2016 = select_keywords(d1)
     keywords_2017, tfidf_2017 = select_keywords(d2)
     return tfidf_2016, tfidf_2017
 
 def extract_text_for_trends(filename, to_delete):
-    file_path = os.path.join(desc_dir, filename)
+    """
+    Gets pre-processed descriptions
+    :param filename: string
+    :param to_delete: list of strings, used for Cross-Domain Filtering
+    :return: tuple of lists of strings
+    """
+    file_path = os.path.join(DESC_DIR, filename)
     descriptions_2016 = get_pre_processed_entries(file_path, to_delete, 1, 6, 2016)
     descriptions_2017 = get_pre_processed_entries(file_path, to_delete, 1, 6, 2017)
     return descriptions_2016, descriptions_2017
 
 def extract_keywords(directory, filename):
+    """
+    Gets keywords for a given file
+    :param directory: string
+    :param filename: string
+    :return:
+    """
     descriptions = get_entries(directory, filename)
     keywords, sorted_tfidf = select_keywords(descriptions)
     return keywords
@@ -357,12 +477,23 @@ def extract_keywords(directory, filename):
 ### TREND DETECTION ###
 
 def get_tfidf_map(tfidf):
+    """
+    Gets TF-IDF dict from TF-IDF tuple
+    :param tfidf: list of tuples (string, float)
+    :return: dict {string: float}
+    """
     tfidf_map = {}
     for entry in tfidf:
         tfidf_map[entry[0]] = entry[1]
     return tfidf_map
 
 def compare_tfidfs(tfidf_2016, tfidf_2017):
+    """
+    Compares two TF-IDF lists
+    :param tfidf_2016: list of tuples (string, float)
+    :param tfidf_2017: list of tuples (string, float)
+    :return: sorted list of tuples (string, float)
+    """
     tfidf_map_2016 = get_tfidf_map(tfidf_2016)
     tfidf_map_2017 = get_tfidf_map(tfidf_2017)
     tfidf_delta = {}
@@ -380,6 +511,12 @@ def compare_tfidfs(tfidf_2016, tfidf_2017):
 ### DENDROGRAM OF TRENDING TERMS ###
 
 def compute_tfidf_vectors(corpus, trending_words):
+    """
+    Computes TF IDF vectors
+    :param corpus: list of lists of strings
+    :param trending_words: list of strings
+    :return: dictionary {int: float}
+    """
     text_count = len(corpus)
     word_count = len(trending_words)
     # Initialising DF
@@ -408,6 +545,11 @@ def compute_tfidf_vectors(corpus, trending_words):
 ### MAIN FUNCTIONS ###
 
 def get_countries(directory):
+    """
+    Gets countries available in directory
+    :param directory: string
+    :return: list of strings
+    """
     countries = set()
     for filename in os.listdir(directory):
         if not filename.startswith("._") and filename.endswith(".csv"):
@@ -415,6 +557,12 @@ def get_countries(directory):
     return countries
 
 def get_keywords_per_country(directory, dest_dir):
+    """
+    Gets keywords for each country
+    :param directory: string
+    :param dest_dir: string
+    :return: None, prints into files
+    """
     countries = get_countries(directory)
     # Keyword Extraction
     try:
@@ -473,8 +621,8 @@ def get_keywords_per_country(directory, dest_dir):
 ### MAIN ###
 
 if __name__ == '__main__':
-    desc_dir = "Lemmatised Text"
-    directory = "Raw Text"
-    dest_dir = "TF IDF Delta"
+    DESC_DIR = "Lemmatised Text"
+    DIRECTORY = "Raw Text"
+    DEST_DIR = "TF IDF Delta"
     csv.field_size_limit(sys.maxsize)
-    get_keywords_per_country(directory, dest_dir)
+    get_keywords_per_country(DIRECTORY, DEST_DIR)

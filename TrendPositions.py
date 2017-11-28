@@ -8,6 +8,11 @@ from TrendDetectionPipeline import get_countries, cross_domain_filtering, get_pr
 import numpy as np
 
 def get_trending_words(filename):
+    """
+    Gets trending words for given file
+    :param filename: string
+    :return: dict
+    """
     trend_dir = "TF IDF Delta"
     file_path = os.path.join(trend_dir, "{}.txt".format(filename[:-4]))
     with open(file_path, 'r') as file:
@@ -25,6 +30,12 @@ def get_trending_words(filename):
         return trending_NLP
 
 def get_trend_positions(descriptions, trending_words):
+    """
+    Gets trending word positions
+    :param descriptions: list of lists of strings
+    :param trending_words: 
+    :return: 
+    """
     max_len = 0
     for desc in descriptions:
         l = len(desc)
@@ -33,28 +44,34 @@ def get_trend_positions(descriptions, trending_words):
     positions_count = np.full(max_len, 0)
     for desc in descriptions:
         for word_index in range(len(desc)):
-            try:
-                word = trending_words[desc[word_index]]
+            if desc[word_index] in  trending_words:
                 positions_count[word_index] += 1
-            except:
-                continue
     return positions_count
 
 def get_string_of_array(array):
+    """
+    Gets joined string for list of strings
+    :param array: list of strings
+    :return: string
+    """
     return '\t'.join(list([str(x) for x in array]))
 
 def get_trend_position_graphs():
-    countries = get_countries(desc_dir)
+    """
+    Plots and prints positions of trending words
+    :return: None
+    """
+    countries = get_countries(DESC_DIR)
     keywords_per_country = np.load('keys.npy').item()
     for country in countries:
         print(country)
-        filenames = sorted([filename for filename in os.listdir(desc_dir) if filename.startswith(country) and filename.endswith(".csv")])
+        filenames = sorted([filename for filename in os.listdir(DESC_DIR) if filename.startswith(country) and filename.endswith(".csv")])
         to_delete = cross_domain_filtering(keywords_per_country[country])
         for filename in filenames:
             trending_NLP = get_trending_words(filename)
             if trending_NLP:
                 print(filename)
-                file_path = os.path.join(desc_dir, filename)
+                file_path = os.path.join(DESC_DIR, filename)
                 try:
                     desc_2017 = np.load("Trend Positions/descriptions_2017_{}.npy".format(filename[:-4])).item()
                 except:
@@ -67,15 +84,14 @@ def get_trend_position_graphs():
                 plt.xlabel('Positions of Trending Words in Text')
                 plt.ylabel('Frequency of Position')
                 plt.plot(np.arange(len(positions_count)), positions_count, 'bo-')
-                plt.savefig('{}/{}.png'.format(dest_dir, filename[:-4]))
-                file = open("{}/{}.txt".format(dest_dir, filename[:-4]), "w")
+                plt.savefig('{}/{}.png'.format(DEST_DIR, filename[:-4]))
+                file = open("{}/{}.txt".format(DEST_DIR, filename[:-4]), "w")
                 print(get_string_of_array(np.arange(len(positions_count))), file=file)
                 print(get_string_of_array(positions_count), file=file)
                 file.close()
 
 if __name__ == "__main__":
-    directory = "Raw Text"
-    desc_dir = "Lemmatised Text"
-    dest_dir = "Trend Positions"
+    DESC_DIR = "Lemmatised Text"
+    DEST_DIR = "Trend Positions"
     csv.field_size_limit(sys.maxsize)
     get_trend_position_graphs()

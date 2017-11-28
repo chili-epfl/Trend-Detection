@@ -8,88 +8,128 @@ from bs4 import *
 import csv
 
 if __name__ == "__main__":
-    map = {}
+    
+    # Dictionary collecting all data
+    data_dict = dict()
 
-    old_category = ""
+    old_category = None
 
-    printed_out_categories = {}
+    # Folder where the json files containing Adzuna search results are found
+    JOB_AD_DIR = 'Raw Data'
 
-    for filename in os.listdir('Raw Text'):
-        printed_out_categories[filename.split('.')[0]] = 0
+    # Folder where the job ad descriptions will be saved
+    DESCRIPTION_DIR = 'Raw Text'
 
-    directory = 'Raw Data'
+    # If the Job Ad Description Fetcher was interrupted, this enables it to restart where it left off
+    printed_out_categories = set(filename.split('.')[0] for filename in os.listdir(DESCRIPTION_DIR))
+    
+    # File Extensions
+    JOB_AD_EXT = '.json'
+    DESCRIPTION_EXT = '.csv'
 
-    for filename in os.listdir(directory):
-        if filename.endswith(".json"):
-            print(filename)
-            category = '_'.join(filename.split("_")[:2])
-            try:
-                x = printed_out_categories[category]
-            except:
-                if len(old_category) == 0:
-                    old_category = category
-                if old_category != category:
-                    print("Printing the CSV file of {}".format(old_category))
-                    with open('Raw Text/{}.csv'.format(old_category), 'w') as csvfile:
-                        fieldnames = ['id', 'title', 'created', 'description_from_url', 'description']
-                        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                        writer.writeheader()
-                        for job in map[old_category]:
-                            writer.writerow(job)
-                    old_category = category
+    # CSV Header
+    ID = 'id'
+    TITLE = 'title'
+    DATE = 'created'
+    DESC_STATE = 'description_from_url'
+    DESC = 'description'
+    FIELDNAMES = [ID, TITLE, DATE, DESC_STATE, DESC]
+    
+    # Filenames to loop over
+    job_ad_file_names = [filename for filename in os.listdir(JOB_AD_DIR) if filename.endswith(JOB_AD_EXT)]
+    
+    for filename in job_ad_file_names:
+
+        # Log
+        print(filename)
+        
+        # Category of file
+        category = '_'.join(filename.split("_")[:2])
+        
+        # Proceeding if category was not already finished
+        if category not in printed_out_categories:
+
+            # Initialising old_category if None
+            if old_category == None:
+                old_category = category
+
+            # If we change category, corresponding CSV file is printed
+            if not old_category == category:
+                print("Printing the CSV file of {}".format(old_category))
+                with open('{}/{}{}'.format(DESCRIPTION_DIR, old_category, DESCRIPTION_EXT), 'w') as csvfile:
+                    writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
+                    writer.writeheader()
+                    for job in data_dict[old_category]:
+                        writer.writerow(job)
+                old_category = category
+
+            # Initialises empty array in the data dictionary
+            if category not in data_dict:
+                data_dict[category] = []
+
+            # Loading json data as dictionary
+            with open(os.path.join(JOB_AD_DIR, filename)) as f:
+                json_data = json.load(f)["results"]
+                
+            # Looping over json data
+            for key in range(len(json_data)):
+
+                # Log
+                print("{} {}".format(filename, key))
+
+                # Job Data
+                job = dict()
+                job[ID] = json_data[key][ID]
+                job[TITLE] = json_data[key][TITLE]
+                job[DATE] = json_data[key][DATE]
+                description = json_data[key][DESC]
+
+                # Checking state of description
+                desc_from_url = -1
+
+                # Trying to get description from Redirect Source URL
                 try:
-                    x = map[category]
-                except:
-                    map[category] = []
-                    continue
-                with open(os.path.join(directory, filename)) as f:
-                    data = json.load(f)["results"]
-                for key in range(len(data)):
-                    print("{} {}".format(filename, key))
-                    job = {}
-                    job['id'] = data[key]['id']
-                    job['title'] = data[key]['title']
-                    job['created'] = data[key]['created']
-                    description = data[key]['description']
-                    desc_from_url = -1
-                    try:
-                        redirect_url = BeautifulSoup(url.urlopen(data[key]['redirect_url']).read())
-                        if len(redirect_url('a')) == 1:
-                            job_url = str(redirect_url('a')[0]).split("href=\"")[1].split("\">")[0]
-                            soup = BeautifulSoup(url.urlopen(job_url).read())
-                            print("This is a redirect URL")
-                        else:
-                            soup = redirect_url
-                            print("The Job Ad Description will be retrieved from Adzuna")
-                        try:
-                            [s.extract() for s in soup('script')]
-                            [s.extract() for s in soup('a')]
-                            text = soup.get_text()
-                            if description[:10] in text:
-                                description = text[text.index(description[:10]):]
-                                desc_from_url = 1
-                                print("Description from URL")
-                            else:
-                                desc_from_url = 0
-                                print("Redirect Target URL doesn't have Description")
-                        except:
-                            print("Could not get Redirect Target URL")
-                            continue
-                    except:
-                        print("Could not get Redirect Source URL")
-                        continue
-                    job['description_from_url'] = desc_from_url
-                    job['description'] = description
-                    map[category].append(job)
-                continue
+                    redirect_url = BeautifulSoup(url.urlopen(json_data[key]['redirect_url']).read())
 
+                    # Determining if Redirect URL is in Adzuna or not
+                    if len(redirect_url('a')) == 1:
+                        job_url = str(redirect_url('a')[0]).split("href=\"")[1].split("\">")[0]
+                        soup = BeautifulSoup(url.urlopen(job_url).read())
+                        print("This is a redirect URL")
+                    else:
+                        soup = redirect_url
+                        print("The Job Ad Description will be retrieved from Adzuna")
+
+                    # Trying to get description from Redirect Target URL
+                    try:
+                        [s.extract() for s in soup('script')]
+                        [s.extract() for s in soup('a')]
+                        text = soup.get_text()
+                        if description[:10] in text:
+                            description = text[text.index(description[:10]):]
+                            desc_from_url = 1
+                            print("Description from URL")
+                        else:
+                            desc_from_url = 0
+                            print("Redirect Target URL doesn't have Description")
+                    except:
+                        print("Could not get Redirect Target URL")
+                        pass
+                except:
+                    print("Could not get Redirect Source URL")
+                    pass
+                job[DESC_STATE] = desc_from_url
+                job[DESC] = description
+                data_dict[category].append(job)
+
+    # Printing last category
     try:
         print("Printing the CSV file of {}".format(old_category))
-        with open('Raw Text/{}.csv'.format(old_category), 'w') as csvfile:
-            fieldnames = ['id', 'title', 'created', 'description_from_url', 'description']
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        with open('{}/{}{}'.format(DESCRIPTION_DIR, old_category, DESCRIPTION_EXT), 'w') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
             writer.writeheader()
-            for job in map[category]:
+            for job in data_dict[category]:
                 writer.writerow(job)
     except:
          print("Last category was empty")
+         pass
