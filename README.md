@@ -3,7 +3,9 @@ Detecting Trends in Job Advertisements.
 
 ## Authors
 
-Khalil Mrini, Kshitij Sharma, Pierre Dillenbourg
+[Khalil Mrini](https://www.linkedin.com/in/khalilmrini/), [Kshitij Sharma](https://scholar.google.ch/citations?user=Wr8pFkEAAAAJ&hl=en), [Pierre Dillenbourg](https://people.epfl.ch/cgi-bin/people?id=155704&op=bio&lang=en&cvlang=en)
+
+[Paper available here](https://infoscience.epfl.ch/record/256472?&ln=en).
 
 ## Abstract
 
